@@ -110,7 +110,8 @@ async def _get_media_meta(
     """
     if _type in ["audio", "document", "video"]:
         # pylint: disable = C0301
-        file_format: Optional[str] = media_obj.mime_type.split("/")[-1]  # type: ignore
+        file_format: Optional[str] = media_obj.mime_type.split(
+            "/")[-1]  # type: ignore
     else:
         file_format = None
 
@@ -127,9 +128,16 @@ async def _get_media_meta(
             ),
         )
     else:
-        file_name = os.path.join(
-            THIS_DIR, _type, getattr(media_obj, "file_name", None) or ""
-        )
+        media_path = getattr(media_obj, "file_path", None) or ""
+
+        # some times media path starts with `/`
+        # which join treat as absolute path
+        # which result in permission error sometimes
+        if media_path.startswith("/"):
+            media_path =  os.path.join("document", media_path[1:])
+
+        file_name = os.path.join(THIS_DIR, _type, media_path)
+
     return file_name, file_format
 
 
@@ -186,7 +194,8 @@ async def download_media(
                             message, file_name=file_name
                         )
                         # pylint: disable = C0301
-                        download_path = manage_duplicate_file(download_path)  # type: ignore
+                        download_path = manage_duplicate_file(
+                            download_path)  # type: ignore
                     else:
                         download_path = await client.download_media(
                             message, file_name=file_name
